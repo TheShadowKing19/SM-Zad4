@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from Lab1_img import imgToFloat
-
+import os
+import time
 
 pallet8 = np.array([
         [0.0, 0.0, 0.0],
@@ -33,6 +34,15 @@ pallet16 = np.array([
         [1.0, 1.0, 1.0],
         [1.0, 1.0, 0.0]
 ])
+
+
+def generatePallet(n):
+    if n == 8:
+        return pallet8
+    elif n == 16:
+        return pallet16
+    else:
+        return np.linspace(0, 1, 2 ** n).reshape(2**n, 1)
 
 
 def colorFit(pixel: float | np.ndarray[float], pallet: np.ndarray[float]) -> np.ndarray[float]:
@@ -198,29 +208,56 @@ def dithering(picture: np.ndarray[float], method: str = 'random', pallet: np.nda
 
 
 if __name__ == '__main__':
-    N = 3
-    paleta = np.linspace(0, 1, 3).reshape(N, 1).astype(np.float32)
+    print("Co chcesz zrobić?\n"
+          "1. Przetestować dithering losowy\n"
+          "2. Przetestować dithering zorganizowany\n"
+          "3. Przetestować dithering metodą Floyd'a-Steinberg'a\n"
+          "4. Przeprowadzić pełne badanie")
+    choice = int(input("Podaj liczbę: "))
+    os.system("cls")
+    os.listdir("SM_Lab04")
+    file = input("Wybierz plik: ")
+    os.system("cls")
     img = None
     try:
-        img = plt.imread('SM_Lab04/0011.jpg')
+        print("Wczytuje obraz...")
+        img = plt.imread(f'SM_Lab04/{file}')
+        print("Sukces!")
+        time.sleep(2)
     except FileNotFoundError as e:
         print(e)
         exit(1)
     img = imgToFloat(img)
-    # changed_img = quantization(img, pallet8)
-    # plt.imshow(changed_img)
-    # plt.show()
 
-    # changed_img = dithering(img, 'random')
-    # plt.imshow(changed_img, cmap='gray')
-    # plt.show()
+    os.system("cls")
+    match choice:
+        case 1:
+            n = int(input("Na ilu bitach zapisać: "))
+            new_img = dithering(img, pallet=generatePallet(n))
+            plt.imshow(new_img, cmap="gray")
+            plt.title(f"Dithering losowy - {n} bity")
+            plt.show()
 
-    # changed_img = dithering(img, 'ordered', pallet16)
-    # plt.imshow(changed_img)
-    # plt.show()
-    changed_img = dithering(img, 'floyd-steinberg', pallet16)
-    plt.imshow(changed_img)
-    plt.show()
+        case 2:
+            n = int(input("Na ilu bitach zapisać: "))
+            new_image = dithering(img, method="ordered", pallet=generatePallet(n))
+            plt.imshow(new_image)
+            plt.title(f"Dithering zorganizowany - {n} bity")
+            plt.show()
+
+        case 3:
+            n = int(input("Na ilu bitach zapisać: "))
+            new_image = dithering(img, method="floyd-steinberg", pallet=generatePallet(n))
+            plt.imshow(new_image)
+            plt.title(f"Dithering metodą Floyd-Steinberg'a - {n} bity")
+            plt.show()
+
+        case 4:
+            raise NotImplementedError
+
+        case _:
+            print("Nie prawidłowy wybór")
+            exit(0)
 
 
 
