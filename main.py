@@ -79,11 +79,39 @@ def quantization(picture: np.ndarray[float] | float, pallet: np.ndarray[float]) 
 
 
 def dithering(picture: np.ndarray[float], method: str = 'random', pallet: np.ndarray[float] = pallet8):
+    """
+    Dithering to efekt zastosowania szumu, w celu zniwelowania błędu kwantyzacji. Funkcja przyjmuje obraz, metodę, oraz
+    paletę kolorów. Sposób działania zależy od metody.
+
+    Args:
+        picture: Macierz zawierająca obrazek
+        method: Metoda ditheringu. Możliwe wartości: 'random', 'ordered', 'floyd-steinberg'
+        pallet: Paleta dostępnych kolorów.
+
+    Returns:
+        Obraz po ditheringu.
+
+    Raises:
+        TypeError: Jeśli piksele nie są typu float.
+
+    """
     if picture.dtype != float:
         raise TypeError("Typ danych w obrazie musi być float")
 
     match method:
         case 'random':
+            """
+            Metoda ta polega na losowym wyborze piksela. Jeśli wartość piksela jest większa od losowej wartości z 
+            przedziału [0, 1], to piksel przyjmuje wartość 1, w przeciwnym wypadku 0.
+            Algorytm postępuję następująco:
+            1. Obraz jest konwertowany do skali szarości (jeśli jest kolorowy).
+            2. Pobierane są wymiary obrazu.
+            3. Tworzona jest macierz o wymiarach obrazu, w której każdy piksel przyjmuje losowe wartość z przedziału 
+            [0, 1].
+            4. Obraz jest porównywany z macierzą losowych wartości. Jeśli wartość piksela jest większa od losowej 
+            wartości, to piksel przyjmuje wartość 1, w przeciwnym wypadku 0.
+            5. Zwracany jest obraz.
+            """
             if picture.ndim == 3:
                 picture = picture.mean(axis=2)
             rows, cols = picture.shape[:2]
@@ -91,6 +119,19 @@ def dithering(picture: np.ndarray[float], method: str = 'random', pallet: np.nda
             out_img = (picture >= random) * 1
             return out_img
         case 'ordered':
+            """
+            Dithering zorganizowany to metoda, w której używa się kwantyzacji (funkcji colorFit) oraz mapy progowania.
+            Algorytm postępuję następująco:
+            1. Pobierane są wymiary obrazu.
+            2. Kopiowany jest obraz.
+            3. Wyświetlana jest lista dostępnych map progowania. Użytkownik wybiera mapę.
+            4. Mapa progowania jest przekształcona do wartości przesunięcia (będzie zawierała wartości z przedziału
+            [-0.5, 0.5]).
+            5. Obliczany jest współczynnik skalowania koloru (r).
+            6. Dla każdego piksela obrazu:
+            6.1. Obliczana jest nowa wartość piksela (nowy kolor).
+            7. Zwracany jest obraz.
+            """
             rows, cols = picture.shape[:2]
             out_img = picture.copy()
             choice = input("Wybierz mapę progowania:\n"
@@ -118,6 +159,26 @@ def dithering(picture: np.ndarray[float], method: str = 'random', pallet: np.nda
             return out_img
 
         case 'floyd-steinberg':
+            """
+            Metoda Floyd-Steinberg to metoda ditheringu, która polega na przekazywaniu błędu kwantyzacji do 
+            sąsiadujących pikseli (do piksela po prawej stronie, piksela pod oraz piksela na dole po prawej i lewej 
+            stronie. 
+            Algorytm postępuję następująco:
+            1. Pobierane są wymiary obrazu.
+            2. Kopiowany jest obraz.
+            3. Dla każdego piksela obrazu:
+            3.1. Obliczana jest nowa wartość piksela za pomocą kwantyzacji (nowy kolor).
+            3.2. Obliczany jest błąd kwantyzacji (jest to różnica w wartości starego piksela z nowym).
+            3.3 Jeśli piksel nie jest ostatnim pikselem w wierszu, to do piksela po prawej stronie dodawany jest błąd 
+            pomnożony przez 7/16.
+            3.4 Jeśli piksel nie jest ostatnim pikselem w kolumnie, to do piksela pod dodawany jest błąd pomnożony 
+            przez 5/16.
+            3.5 Jeśli piksel nie jest ostatnim pikselem w wierszu i nie jest pierwszym pikselem w kolumnie, to do
+            piksela na dole po lewej stronie dodawany jest błąd pomnożony przez 3/16.
+            3.6 Jeśli piksel nie jest ostatnim pikselem w wierszu i nie jest ostatnim pikselem w kolumnie, to do 
+            piksela na dole po prawej stronie dodawany jest błąd pomnożony przez 1/16.
+            4. Zwracany jest obraz.
+            """
             rows, cols = picture.shape[:2]
             out_img = picture.copy()
             for w in tqdm(range(rows)):
