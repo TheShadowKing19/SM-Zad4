@@ -118,7 +118,21 @@ def dithering(picture: np.ndarray[float], method: str = 'random', pallet: np.nda
             return out_img
 
         case 'floyd-steinberg':
-            raise NotImplementedError
+            rows, cols = picture.shape[:2]
+            out_img = picture.copy()
+            for w in tqdm(range(rows)):
+                for k in range(cols):
+                    out_img[w, k] = colorFit(picture[w, k], pallet)
+                    error = picture[w, k] - out_img[w, k]
+                    if k + 1 < cols:
+                        picture[w, k + 1] += error * 7 / 16
+                    if w + 1 < rows:
+                        if k - 1 >= 0:
+                            picture[w + 1, k - 1] += error * 3 / 16
+                        picture[w + 1, k] += error * 5 / 16
+                        if k + 1 < cols:
+                            picture[w + 1, k + 1] += error * 1 / 16
+            return out_img
     pass
 
 
@@ -140,7 +154,10 @@ if __name__ == '__main__':
     # plt.imshow(changed_img, cmap='gray')
     # plt.show()
 
-    changed_img = dithering(img, 'ordered', pallet16)
+    # changed_img = dithering(img, 'ordered', pallet16)
+    # plt.imshow(changed_img)
+    # plt.show()
+    changed_img = dithering(img, 'floyd-steinberg', pallet16)
     plt.imshow(changed_img)
     plt.show()
 
