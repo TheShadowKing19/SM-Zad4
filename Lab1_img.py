@@ -14,7 +14,7 @@ def imgToUInt8(img):
 
 def imgToFloat(img):
     if np.issubdtype(img.dtype, np.floating):
-        pass
+        return img
 
     img = img / 255.0
 
